@@ -162,5 +162,5 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 ---
 
 <p align="center">
-  Developed by <b>Haziq</b> — Singapore. Empowering creators, one studio at a time.
+  Developed by <b>Haziq, Founder of Asirive</b> — Singapore. Empowering creators, one studio at a time.
 </p>
