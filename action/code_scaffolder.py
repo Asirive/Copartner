@@ -70,16 +70,21 @@ class CodeScaffolder:
     """
     Generates complete project scaffolds from natural language briefs.
 
+    Cost strategy:
+      1. Try OpenCode Go (Kimi K2.6) first — ~10x cheaper than Gemini Pro
+      2. Fall back to Gemini Pro if OpenCode is unavailable
+
     Usage:
-        scaffolder = CodeScaffolder(gemini_client=client)
+        scaffolder = CodeScaffolder(gemini_client=client, opencode_client=opencode)
         result = scaffolder.scaffold("Build a landing page for a coffee shop called Beanery")
         print(result["output_path"])   # c:/...Copartner/output/beanery/
         print(result["files_created"]) # list of file paths
     """
 
-    def __init__(self, gemini_client=None, behavioral_engine=None):
-        self.gemini   = gemini_client
-        self.behavior = behavioral_engine
+    def __init__(self, gemini_client=None, behavioral_engine=None, opencode_client=None):
+        self.gemini      = gemini_client
+        self.behavior    = behavioral_engine
+        self.opencode    = opencode_client
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     def scaffold(
@@ -113,17 +118,36 @@ class CodeScaffolder:
             style_context=style_ctx,
         )
 
-        # Call Gemini Pro (scaffolding needs deep reasoning)
-        try:
-            raw = self.gemini.generate(
-                contents=[prompt],
-                use_pro=True,
-                temperature=0.3,
-                max_output_tokens=8192,
+        # Cost-optimised routing:
+        # Try OpenCode Go (Kimi K2.6) first — cheaper for heavy generation
+        # Fall back to Gemini Pro if OpenCode is unavailable
+        raw = None
+        if self.opencode and self.opencode.ready:
+            logger.info("Scaffolding via OpenCode Go (Kimi K2.6)")
+            raw = self.opencode.scaffold_with_opencode(
+                brief=prompt,
+                system_instruction=(
+                    "You are an expert software engineer. Generate complete, "
+                    "production-ready project scaffolds. Output strict JSON only."
+                ),
             )
-        except Exception as e:
-            logger.error(f"Gemini scaffold generation failed: {e}")
-            return {"error": str(e)}
+        elif self.gemini is not None:
+            logger.info("Scaffolding via Gemini Pro (OpenCode not available)")
+            try:
+                raw = self.gemini.generate(
+                    contents=[prompt],
+                    use_pro=True,
+                    temperature=0.3,
+                    max_output_tokens=8192,
+                )
+            except Exception as e:
+                logger.error(f"Gemini scaffold generation failed: {e}")
+                return {"error": str(e)}
+        else:
+            return {"error": "No generation backend available (Gemini or OpenCode required)"}
+
+        if raw is None:
+            return {"error": "Generation returned no content"}
 
         # Parse JSON response
         scaffold_data = self._parse_scaffold_json(raw)

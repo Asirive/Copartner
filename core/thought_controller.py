@@ -84,6 +84,7 @@ class ThoughtController:
         Reads GEMINI_API_KEY from environment if not provided.
         """
         from core.gemini_client    import GeminiClient
+        from core.opencode_client  import OpenCodeClient
         from core.tool_executor    import ToolExecutor
         from core.token_budget     import TokenBudget
         from core.intent_router    import IntentRouter
@@ -98,6 +99,9 @@ class ThoughtController:
         key    = api_key or os.environ.get("GEMINI_API_KEY")
         client = GeminiClient(api_key=key)
 
+        # OpenCode Go — cheap open-source model routing
+        opencode = OpenCodeClient()
+
         embedder   = GeminiEmbedder(client)
         embed_fn   = make_chromadb_embedding_fn(embedder)
         memory     = MemoryManager(embedding_fn=embed_fn)
@@ -105,7 +109,11 @@ class ThoughtController:
         budget     = TokenBudget()
         router     = IntentRouter()
         behavior   = BehavioralEngine()
-        scaffolder = CodeScaffolder(gemini_client=client, behavioral_engine=behavior)
+        scaffolder = CodeScaffolder(
+            gemini_client=client,
+            behavioral_engine=behavior,
+            opencode_client=opencode,   # uses Kimi K2.6 first, Gemini fallback
+        )
         vercel     = VercelConnector()
         learner    = SkillLearner(memory_manager=memory)
         tools      = ToolExecutor(
@@ -114,6 +122,7 @@ class ThoughtController:
             code_scaffolder=scaffolder,
             vercel_connector=vercel,
         )
+
 
         return cls(
             gemini_client=client,

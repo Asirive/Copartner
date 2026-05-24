@@ -2,6 +2,10 @@
 google-genai>=2.0.0
 pyyaml>=6.0.2
 
+# OpenCode Go — OpenAI-compatible API for cheap open-source models
+# (Kimi K2, DeepSeek, Qwen, GLM, MiMo, MiniMax)
+openai>=1.30.0
+
 # Memory System
 chromadb>=0.5.0
 
