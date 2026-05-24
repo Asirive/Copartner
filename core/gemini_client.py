@@ -272,6 +272,7 @@ class GeminiClient:
             resp = self.client.models.embed_content(
                 model=self.MODELS["embedding"],
                 contents=texts,
+                config={"output_dimensionality": 768},
             )
             return [emb.values for emb in resp.embeddings]
         except Exception as e:

@@ -91,4 +91,10 @@ def make_chromadb_embedding_fn(embedder: GeminiEmbedder) -> Callable:
         def __call__(self, input: list[str]) -> list[list[float]]:
             return embedder.embed(input)
 
+        def embed_query(self, input: list[str]) -> list[list[float]]:
+            return self.__call__(input)
+
+        def embed_documents(self, input: list[str]) -> list[list[float]]:
+            return self.__call__(input)
+
     return _ChromaEmbedFn()
