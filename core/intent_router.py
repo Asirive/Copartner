@@ -26,7 +26,8 @@ class RouteDecision:
 # Each rule: (intent_label, model, pattern_list)
 ROUTING_RULES: list[tuple[str, str, list[str]]] = [
     # Vision — anything about looking at the screen
-    ("screen_analysis", "vision", [
+    # Uses gemini-3.5-flash (natively multimodal — same model, image in contents list)
+    ("screen_analysis", "flash", [
         r"what('s| is) on (my |the )?screen",
         r"look at (my |the )?screen",
         r"observe",
@@ -36,7 +37,7 @@ ROUTING_RULES: list[tuple[str, str, list[str]]] = [
         r"describe (the |this )?screen",
     ]),
 
-    # Pro — deep reasoning tasks
+    # Pro — deep reasoning (gemini-3.1-pro-preview)
     ("deep_code", "pro", [
         r"\barchitect\b",
         r"\bscaffold\b",
@@ -72,7 +73,7 @@ ROUTING_RULES: list[tuple[str, str, list[str]]] = [
         r"\bdockerfile\b",
     ]),
 
-    # Flash — simple, fast tasks
+    # Flash — simple, fast tasks (gemini-3.5-flash)
     ("quick_classify", "flash", [
         r"^(yes|no|is it|does it|can you|will)",
         r"\bquick(ly)?\b",
