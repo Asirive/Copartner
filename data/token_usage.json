@@ -1,0 +1,58 @@
+{
+  "2026-05-24": {
+    "date": "2026-05-24",
+    "tokens_by_model": {
+      "flash": 951
+    },
+    "cost_by_model": {
+      "flash": 0.00028529999999999994
+    },
+    "calls_by_model": {
+      "flash": 7
+    },
+    "tasks": [
+      {
+        "time": "2026-05-24T09:45:55",
+        "model": "flash",
+        "tokens": 100,
+        "task": "hello"
+      },
+      {
+        "time": "2026-05-24T09:50:12",
+        "model": "flash",
+        "tokens": 130,
+        "task": "hello"
+      },
+      {
+        "time": "2026-05-24T09:51:46",
+        "model": "flash",
+        "tokens": 104,
+        "task": "hiii"
+      },
+      {
+        "time": "2026-05-24T09:52:13",
+        "model": "flash",
+        "tokens": 257,
+        "task": "what can u do?"
+      },
+      {
+        "time": "2026-05-24T09:52:20",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what can u do?"
+      },
+      {
+        "time": "2026-05-24T09:56:50",
+        "model": "flash",
+        "tokens": 160,
+        "task": "what do you remember"
+      },
+      {
+        "time": "2026-05-24T09:56:56",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what do you remember"
+      }
+    ]
+  }
+}
