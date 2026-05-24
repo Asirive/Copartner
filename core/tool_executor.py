@@ -112,10 +112,14 @@ class ToolExecutor:
         self,
         memory_manager=None,
         gemini_client=None,
+        code_scaffolder=None,
+        vercel_connector=None,
     ):
-        self.memory   = memory_manager   # MemoryManager instance
-        self.gemini   = gemini_client    # GeminiClient (for observe_screen)
-        self.stats: dict[str, int] = {}  # tool call counts this session
+        self.memory    = memory_manager
+        self.gemini    = gemini_client
+        self.scaffolder = code_scaffolder
+        self.vercel     = vercel_connector
+        self.stats: dict[str, int] = {}
         logger.info("ToolExecutor initialized")
 
     # ── Dispatch ──────────────────────────────────────────────────────────────
@@ -171,21 +175,41 @@ class ToolExecutor:
 
     def _handle_scaffold(self, content: str) -> str:
         """
-        <scaffold> requests a project to be scaffolded.
-        Phase 1 stub — logs the brief. Phase 3 will call action/code_scaffolder.py.
+        <scaffold> generates a complete project from a brief.
+        Uses CodeScaffolder if available, else logs as stub.
         """
         logger.info(f"[SCAFFOLD] brief: {content.strip()[:100]}")
-        # TODO Phase 3: wire to action/code_scaffolder.py
-        return f"[Scaffold queued] Brief received. Scaffolding will execute in Phase 3."
+        if self.scaffolder is not None:
+            result = self.scaffolder.scaffold(brief=content.strip())
+            if "error" in result:
+                return f"[Scaffold error] {result['error']}"
+            lines = [
+                f"[Scaffold complete] {result['file_count']} files written to: {result['output_path']}",
+                f"Project type: {result['project_type']}",
+            ]
+            if result.get("setup_commands"):
+                lines.append("Setup: " + " && ".join(result["setup_commands"]))
+            if result.get("notes"):
+                lines.append(f"Notes: {result['notes'][:100]}")
+            return "\n".join(lines)
+        return f"[Scaffold queued] Brief received. Wire CodeScaffolder in ToolExecutor to enable."
 
     def _handle_deploy(self, content: str) -> str:
         """
-        <deploy> triggers a deployment.
-        Phase 1 stub. Phase 3 will wire to integration/connectors/vercel.py + cloud_run.py.
+        <deploy> triggers a Vercel deployment.
+        Uses VercelConnector if available, else logs as stub.
         """
         logger.info(f"[DEPLOY] target: {content.strip()[:100]}")
-        # TODO Phase 3: wire to deployment connectors
-        return f"[Deploy queued] Target: '{content.strip()[:80]}'. Deployment will execute in Phase 3."
+        if self.vercel is not None:
+            # Parse "project_name::path" format or just use content as project name
+            parts = content.strip().split("::", 1)
+            project_name = parts[0].strip().lower().replace(" ", "-")
+            project_dir  = parts[1].strip() if len(parts) > 1 else f"output/{project_name}"
+            result = self.vercel.deploy(project_dir=project_dir, project_name=project_name)
+            if "error" in result:
+                return f"[Deploy error] {result['error']}"
+            return f"[Deployed] {result['url']} | Status: {result['status']}"
+        return f"[Deploy queued] Target: '{content.strip()[:80]}'. Set VERCEL_TOKEN in .env to enable."
 
     def _handle_observe_screen(self, content: str) -> str:
         """

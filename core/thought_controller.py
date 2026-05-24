@@ -89,21 +89,31 @@ class ThoughtController:
         from core.skill_learner    import SkillLearner
         from memory.memory_manager import MemoryManager
         from memory.embeddings     import GeminiEmbedder, make_chromadb_embedding_fn
-        from memory.behavioral_engine import BehavioralEngine
+        from memory.behavioral_engine  import BehavioralEngine
+        from action.code_scaffolder    import CodeScaffolder
+        from integration.connectors.vercel_connector import VercelConnector
+        from integration.connectors.stripe_connector import StripeConnector
 
         key    = api_key or os.environ.get("GEMINI_API_KEY")
         client = GeminiClient(api_key=key)
 
         # Wire Gemini embeddings into ChromaDB memory
-        embedder    = GeminiEmbedder(client)
-        embed_fn    = make_chromadb_embedding_fn(embedder)
-        memory      = MemoryManager(embedding_fn=embed_fn)
+        embedder = GeminiEmbedder(client)
+        embed_fn = make_chromadb_embedding_fn(embedder)
+        memory   = MemoryManager(embedding_fn=embed_fn)
 
-        budget   = TokenBudget()
-        router   = IntentRouter()
-        behavior = BehavioralEngine()
-        tools    = ToolExecutor(memory_manager=memory, gemini_client=client)
-        learner  = SkillLearner(memory_manager=memory)
+        budget     = TokenBudget()
+        router     = IntentRouter()
+        behavior   = BehavioralEngine()
+        scaffolder = CodeScaffolder(gemini_client=client, behavioral_engine=behavior)
+        vercel     = VercelConnector()
+        learner    = SkillLearner(memory_manager=memory)
+        tools      = ToolExecutor(
+            memory_manager=memory,
+            gemini_client=client,
+            code_scaffolder=scaffolder,
+            vercel_connector=vercel,
+        )
 
         return cls(
             gemini_client=client,

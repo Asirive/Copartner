@@ -10,13 +10,22 @@ mss>=9.0.0
 watchdog>=4.0.0
 pillow>=10.0.0
 
-# Desktop Control (Phase 3)
+# Desktop Control (Phase 4 — Computer Use)
 pyautogui>=0.9.54
 
 # IPC Backend API (Phase 4 — Tauri bridge)
 fastapi>=0.111.0
 uvicorn>=0.29.0
 websockets>=12.0
+
+# HTTP Client (Vercel, Stripe, Cloud Run API calls)
+httpx>=0.27.0
+
+# Stripe for B2B revenue
+stripe>=10.0.0
+
+# Rich terminal UI
+rich>=13.0.0
 
 # Utilities
 loguru>=0.7.0
