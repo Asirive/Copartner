@@ -85,6 +85,9 @@ def make_chromadb_embedding_fn(embedder: GeminiEmbedder) -> Callable:
     ChromaDB expects an object with a __call__(input: list[str]) -> list[list[float]] method.
     """
     class _ChromaEmbedFn:
+        def name(self) -> str:
+            return "gemini-embedder"
+
         def __call__(self, input: list[str]) -> list[list[float]]:
             return embedder.embed(input)
 

@@ -23,6 +23,10 @@ import argparse
 import logging
 from pathlib import Path
 
+# Enforce UTF-8 encoding for Windows terminals
+if sys.stdout.encoding.lower() != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+
 # Load .env before anything else
 try:
     from dotenv import load_dotenv

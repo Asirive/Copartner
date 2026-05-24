@@ -45,7 +45,7 @@ class GeminiClient:
         "pro":        "gemini-3.1-pro-preview",       # deep reasoning, coding
         "lite":       "gemini-3.1-flash-lite-preview", # high-frequency, cheapest
         "live":       "gemini-3.1-flash-live-preview", # real-time voice (Live API)
-        "embedding":  "text-embedding-004",            # ChromaDB embeddings
+        "embedding":  "gemini-embedding-2",            # ChromaDB embeddings
     }
 
     def __init__(self, api_key: Optional[str] = None):
@@ -98,17 +98,17 @@ class GeminiClient:
         kwargs: dict = {
             "model": model,
             "input": prompt,
-            "config": {
+            "generation_config": {
                 "temperature": temperature,
                 "max_output_tokens": max_output_tokens,
             },
         }
         if system_instruction:
-            kwargs["config"]["system_instruction"] = system_instruction
+            kwargs["system_instruction"] = system_instruction
         if previous_interaction_id:
             kwargs["previous_interaction_id"] = previous_interaction_id
         if tools:
-            kwargs["config"]["tools"] = tools
+            kwargs["tools"] = tools
 
         try:
             interaction = self.client.interactions.create(**kwargs)
@@ -145,13 +145,13 @@ class GeminiClient:
             "model": model,
             "input": prompt,
             "stream": True,
-            "config": {
+            "generation_config": {
                 "temperature": temperature,
                 "max_output_tokens": max_output_tokens,
             },
         }
         if system_instruction:
-            kwargs["config"]["system_instruction"] = system_instruction
+            kwargs["system_instruction"] = system_instruction
         if previous_interaction_id:
             kwargs["previous_interaction_id"] = previous_interaction_id
 
@@ -161,7 +161,7 @@ class GeminiClient:
         try:
             for event in self.client.interactions.create(**kwargs):
                 # Text token delta
-                if event.type == "step.delta":
+                if event.event_type == "step.delta":
                     if event.delta.type == "text":
                         yield event.delta.text
                         token_count += 1
@@ -175,7 +175,7 @@ class GeminiClient:
                             yield f"[thinking] {text}"
 
                 # Capture interaction ID when complete
-                elif event.type == "interaction.complete":
+                elif event.event_type == "interaction.complete":
                     interaction_id = getattr(event.interaction, "id", None)
                     usage = getattr(event.interaction, "usage", None)
                     if usage:
