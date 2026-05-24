@@ -1,21 +1,27 @@
 # Brain & Intelligence
-google-genai>=0.1.0
-chromadb>=0.4.0
-numpy>=1.24.0
+google-genai>=0.8.0
+pyyaml>=6.0.2
+
+# Memory System
+chromadb>=0.5.0
 
 # Perception Layer (Screenshots & File Watching)
 mss>=9.0.0
-watchdog>=3.0.0
+watchdog>=4.0.0
 pillow>=10.0.0
 
-# Desktop Control
+# Desktop Control (Phase 3)
 pyautogui>=0.9.54
 
-# IPC Backend API
-fastapi>=0.100.0
-uvicorn>=0.22.0
-websockets>=11.0
+# IPC Backend API (Phase 4 — Tauri bridge)
+fastapi>=0.111.0
+uvicorn>=0.29.0
+websockets>=12.0
+
+# Utilities
+loguru>=0.7.0
+python-dotenv>=1.0.0
 
 # Testing
-pytest>=7.3.0
-pytest-asyncio>=0.21.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
