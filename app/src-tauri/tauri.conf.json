@@ -13,13 +13,17 @@
     "windows": [
       {
         "title": "Copartner",
-        "width": 800,
-        "height": 600,
+        "width": 600,
+        "height": 64,
+        "minWidth": 600,
+        "minHeight": 64,
         "transparent": true,
         "decorations": false,
+        "resizable": true,
         "alwaysOnTop": true,
         "visible": false,
-        "center": true
+        "center": true,
+        "shadow": false
       }
     ],
     "security": {
