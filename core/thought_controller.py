@@ -116,11 +116,17 @@ class ThoughtController:
         )
         vercel     = VercelConnector()
         learner    = SkillLearner(memory_manager=memory)
+        
+        # ScreenObserver for tool execution + ambient mode
+        from perception.screen_observer import ScreenObserver, ObserverMode
+        screen_obs = ScreenObserver(gemini_client=client, mode=ObserverMode.PASSIVE)
+        
         tools      = ToolExecutor(
             memory_manager=memory,
             gemini_client=client,
             code_scaffolder=scaffolder,
             vercel_connector=vercel,
+            screen_observer=screen_obs,
         )
 
 

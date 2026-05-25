@@ -96,7 +96,8 @@ def sandbox_exec(code: str) -> str:
 # ── Tag pattern ───────────────────────────────────────────────────────────────
 TAG_PATTERN = re.compile(
     r"<(think|research|code_sandbox|scaffold|deploy|observe_screen"
-    r"|memory_store|memory_recall|final_answer)>(.*?)</\1>",
+    r"|memory_store|memory_recall|final_answer"
+    r"|file_read|file_write|file_list|shell_exec)>(.*?)</\1>",
     re.DOTALL | re.IGNORECASE,
 )
 
@@ -114,11 +115,13 @@ class ToolExecutor:
         gemini_client=None,
         code_scaffolder=None,
         vercel_connector=None,
+        screen_observer=None,
     ):
         self.memory    = memory_manager
         self.gemini    = gemini_client
         self.scaffolder = code_scaffolder
         self.vercel     = vercel_connector
+        self.screen_observer = screen_observer
         self.stats: dict[str, int] = {}
         logger.info("ToolExecutor initialized")
 
@@ -140,6 +143,10 @@ class ToolExecutor:
             "memory_store":   self._handle_memory_store,
             "memory_recall":  self._handle_memory_recall,
             "final_answer":   self._handle_final_answer,
+            "file_read":      self._handle_file_read,
+            "file_write":     self._handle_file_write,
+            "file_list":      self._handle_file_list,
+            "shell_exec":     self._handle_shell_exec,
         }
 
         handler = handlers.get(tag)
@@ -214,11 +221,17 @@ class ToolExecutor:
     def _handle_observe_screen(self, content: str) -> str:
         """
         <observe_screen> captures the screen and analyses it with Gemini Vision.
-        Phase 1 stub — mss + Vision integration comes in Phase 2.
+        Uses the injected ScreenObserver for real screen capture + analysis.
         """
         logger.info(f"[OBSERVE_SCREEN] instruction: {content.strip()[:100]}")
-        # TODO Phase 2: wire to perception/screen_observer.py + Gemini Vision
-        return "[Screen observation] Screen capture integration coming in Phase 2."
+        if self.screen_observer is None:
+            return "[Screen observation] ScreenObserver not available."
+        try:
+            analysis = self.screen_observer.capture_and_analyze(content.strip())
+            return f"[Screen observation result]\n{analysis}"
+        except Exception as e:
+            logger.error(f"Screen observation failed: {e}")
+            return f"[Screen observation error: {e}]"
 
     def _handle_memory_store(self, content: str) -> str:
         """
@@ -262,9 +275,65 @@ class ToolExecutor:
 
     def _handle_final_answer(self, content: str) -> str:
         """<final_answer> signals the end of the loop. Content is the answer itself."""
-        # ThoughtController checks for this tag directly.
-        # Here we just return the content unchanged.
         return content.strip()
+
+    # ── File operations ───────────────────────────────────────────────────────
+
+    def _handle_file_read(self, content: str) -> str:
+        """<file_read>path</file_read> — read a file safely."""
+        from action.file_ops import file_read
+        path = content.strip()
+        result = file_read(path)
+        if "error" in result:
+            return f"[file_read error] {result['error']}"
+        return f"[file_read: {result['path']}]\n{result['content']}"
+
+    def _handle_file_write(self, content: str) -> str:
+        """<file_write>path::content</file_write> — write a file safely."""
+        from action.file_ops import file_write
+        parts = content.strip().split("::", 1)
+        if len(parts) != 2:
+            return "[file_write error] Format: path::content"
+        path, file_content = parts[0].strip(), parts[1].strip()
+        result = file_write(path, file_content, confirm_overwrite=False)
+        if "error" in result:
+            return f"[file_write error] {result['error']}"
+        return f"[file_write: {result['path']}] {result['bytes_written']} bytes written"
+
+    def _handle_file_list(self, content: str) -> str:
+        """<file_list>path</file_list> — list directory contents."""
+        from action.file_ops import file_list
+        path = content.strip()
+        result = file_list(path)
+        if "error" in result:
+            return f"[file_list error] {result['error']}"
+        entries = result.get("entries", [])
+        lines = [f"[file_list: {result['path']}] {len(entries)} entries"]
+        for e in entries[:50]:
+            icon = "📁" if e["type"] == "directory" else "📄"
+            lines.append(f"  {icon} {e['name']} ({e['size']:,} bytes)")
+        if len(entries) > 50:
+            lines.append(f"  ... ({len(entries) - 50} more)")
+        return "\n".join(lines)
+
+    # ── Shell execution ───────────────────────────────────────────────────────
+
+    def _handle_shell_exec(self, content: str) -> str:
+        """<shell_exec>command</shell_exec> — run a shell command safely."""
+        from action.shell_executor import shell_exec
+        command = content.strip()
+        result = shell_exec(command)
+        if "error" in result:
+            return f"[shell_exec error] {result['error']}"
+        lines = [f"[shell_exec: {result['command']}]"]
+        if result.get("stdout"):
+            lines.append("STDOUT:")
+            lines.append(result["stdout"])
+        if result.get("stderr"):
+            lines.append("STDERR:")
+            lines.append(result["stderr"])
+        lines.append(f"Exit code: {result['returncode']}")
+        return "\n".join(lines)
 
     # ── Batch processing ──────────────────────────────────────────────────────
 

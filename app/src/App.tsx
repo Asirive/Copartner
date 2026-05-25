@@ -34,6 +34,13 @@ interface MemoryEntry {
   timestamp: string;
 }
 
+interface Suggestion {
+  id: string;
+  text: string;
+  action: string;
+  confidence: number;
+}
+
 // ─── Window Management ───────────────────────────────────────────────────────
 async function resizeAndShow(mode: ViewMode) {
   try {
@@ -56,7 +63,9 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("MINIMIZED");
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [connState, setConnState] = useState<ConnState>("connecting");
+  const [ambientStatus, setAmbientStatus] = useState<Record<string, string>>({});
   const wsRef = useRef<WebSocket | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dashInputRef = useRef<HTMLInputElement>(null);
@@ -106,7 +115,6 @@ export default function App() {
     const payload = data.payload || {};
 
     if (type === "stream_chunk") {
-      // Append to the pending agent message
       const pid = pendingIdRef.current;
       if (!pid) return;
       setMessages(prev =>
@@ -140,8 +148,17 @@ export default function App() {
         pendingIdRef.current = null;
       }
     } else if (type === "state_update") {
-      // Could show "Thinking" / "Idle" in status bar later
-      console.log("[State]", payload);
+      if (payload.ambient) {
+        setAmbientStatus(payload.ambient);
+      }
+    } else if (type === "proactive_suggestion") {
+      const sug: Suggestion = {
+        id: payload.id,
+        text: payload.text,
+        action: payload.action,
+        confidence: payload.confidence,
+      };
+      setSuggestions(prev => [...prev, sug]);
     }
   }, []);
 
@@ -213,6 +230,28 @@ export default function App() {
 
   const clearMessages = () => setMessages([]);
 
+  const acceptSuggestion = (sug: Suggestion) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "suggestion_action", payload: { id: sug.id, action: sug.action } }));
+      // Also add it as a user message for context
+      submitMessage(`Execute suggestion: ${sug.text}`);
+    }
+    setSuggestions(prev => prev.filter(s => s.id !== sug.id));
+  };
+
+  const dismissSuggestion = (sug: Suggestion, neverAgain: boolean = false) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      if (neverAgain) {
+        ws.send(JSON.stringify({ type: "suggestion_block", payload: { action: sug.action } }));
+      } else {
+        ws.send(JSON.stringify({ type: "suggestion_dismiss", payload: { id: sug.id, never_again: false } }));
+      }
+    }
+    setSuggestions(prev => prev.filter(s => s.id !== sug.id));
+  };
+
   return (
     <div style={{ width: "100vw", height: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <AnimatePresence mode="wait">
@@ -227,9 +266,11 @@ export default function App() {
             onSubmit={submitDash}
             onClear={clearMessages}
             connState={connState}
+            ambientStatus={ambientStatus}
           />
         )}
       </AnimatePresence>
+      <SuggestionsOverlay suggestions={suggestions} onAccept={acceptSuggestion} onDismiss={dismissSuggestion} />
     </div>
   );
 }
@@ -267,7 +308,7 @@ function Spotlight({ query, setQuery, onSubmit, inputRef, connState }: any) {
 }
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
-function Dashboard({ messages, onMinimize, dashInputRef, onSubmit, onClear, connState }: any) {
+function Dashboard({ messages, onMinimize, dashInputRef, onSubmit, onClear, connState, ambientStatus }: any) {
   const [activeTab, setActiveTab] = useState<SidebarTab>("stream");
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -323,6 +364,28 @@ function Dashboard({ messages, onMinimize, dashInputRef, onSubmit, onClear, conn
             </div>
           </div>
         </div>
+
+        {/* Ambient Status */}
+        {ambientStatus && Object.keys(ambientStatus).length > 0 && (
+          <div style={{ padding: "8px", borderTop: "1px solid #141414" }}>
+            <div style={{ fontSize: "10px", fontWeight: 600, color: "#444", textTransform: "uppercase", letterSpacing: "0.06em", padding: "0 8px 6px" }}>Ambient</div>
+            {ambientStatus.screen_observer && (
+              <div style={{ fontSize: "10px", color: "#555", padding: "2px 8px" }}>
+                Screen: {ambientStatus.screen_observer}
+              </div>
+            )}
+            {ambientStatus.ide_watcher && (
+              <div style={{ fontSize: "10px", color: "#555", padding: "2px 8px" }}>
+                IDE: {ambientStatus.ide_watcher}
+              </div>
+            )}
+            {ambientStatus.proactive_mode && (
+              <div style={{ fontSize: "10px", color: "#555", padding: "2px 8px" }}>
+                Mode: {ambientStatus.proactive_mode}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ─ Main ─ */}
@@ -685,6 +748,86 @@ function Badge({ children }: { children: React.ReactNode }) {
       justifyContent: "center", fontSize: "9px", fontWeight: 700, color: "#555",
     }}>
       {children}
+    </div>
+  );
+}
+
+// ─── Suggestions Overlay ─────────────────────────────────────────────────────
+function SuggestionsOverlay({ suggestions, onAccept, onDismiss }: {
+  suggestions: Suggestion[];
+  onAccept: (s: Suggestion) => void;
+  onDismiss: (s: Suggestion, neverAgain: boolean) => void;
+}) {
+  if (suggestions.length === 0) return null;
+
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: "20px",
+      right: "20px",
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+      zIndex: 9999,
+      maxWidth: "360px",
+    }}>
+      <AnimatePresence>
+        {suggestions.map(sug => (
+          <motion.div
+            key={sug.id}
+            initial={{ opacity: 0, x: 20, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              background: "#111",
+              border: "1px solid #222",
+              borderRadius: "8px",
+              padding: "12px 14px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div style={{ fontSize: "11px", color: "#555", marginBottom: "4px", display: "flex", justifyContent: "space-between" }}>
+              <span>Copartner noticed something</span>
+              <span style={{ color: "#3B82F6" }}>{Math.round(sug.confidence * 100)}% confidence</span>
+            </div>
+            <div style={{ fontSize: "13px", color: "#ddd", lineHeight: 1.5, marginBottom: "10px" }}>
+              {sug.text}
+            </div>
+            <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => onDismiss(sug, true)}
+                style={{
+                  padding: "4px 8px", fontSize: "11px", color: "#555",
+                  background: "transparent", border: "none", cursor: "pointer",
+                }}
+              >
+                Never
+              </button>
+              <button
+                onClick={() => onDismiss(sug, false)}
+                style={{
+                  padding: "4px 8px", fontSize: "11px", color: "#888",
+                  background: "transparent", border: "1px solid #222",
+                  borderRadius: "4px", cursor: "pointer",
+                }}
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={() => onAccept(sug)}
+                style={{
+                  padding: "4px 12px", fontSize: "11px", color: "#000",
+                  background: "#eee", border: "none",
+                  borderRadius: "4px", cursor: "pointer", fontWeight: 600,
+                }}
+              >
+                Accept
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

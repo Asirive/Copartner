@@ -54,5 +54,37 @@
         "task": "what do you remember"
       }
     ]
+  },
+  "2026-05-25": {
+    "date": "2026-05-25",
+    "tokens_by_model": {
+      "flash": 368
+    },
+    "cost_by_model": {
+      "flash": 0.0001104
+    },
+    "calls_by_model": {
+      "flash": 3
+    },
+    "tasks": [
+      {
+        "time": "2026-05-25T13:10:47",
+        "model": "flash",
+        "tokens": 100,
+        "task": "Say hello from Copartner"
+      },
+      {
+        "time": "2026-05-25T13:12:17",
+        "model": "flash",
+        "tokens": 100,
+        "task": "hello"
+      },
+      {
+        "time": "2026-05-25T13:12:37",
+        "model": "flash",
+        "tokens": 168,
+        "task": "what do you remember"
+      }
+    ]
   }
 }
