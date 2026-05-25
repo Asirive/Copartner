@@ -60,14 +60,12 @@ class CopartnerServer:
         self._executor = ThreadPoolExecutor(max_workers=2)
         logger.info("ThoughtController ready.")
 
-        # ── Ambient layer ─────────────────────────────────────────────────────
-        logger.info("Starting ambient perception layer...")
+        # ── Ambient layer (started in async start()) ──────────────────────────
         self.screen_observer: ScreenObserver | None = None
         self.ide_watcher: IDEWatcher | None = None
         self.proactive_engine: ProactiveEngine | None = None
-        self._init_ambient_layer()
 
-    def _init_ambient_layer(self):
+    async def _init_ambient_layer(self):
         """Start ScreenObserver, IDEWatcher, and ProactiveEngine."""
         gemini_client = self.thought_controller.gemini
         behavior_engine = self.thought_controller.behavior
@@ -306,6 +304,7 @@ class CopartnerServer:
             logger.info(f"Client disconnected. total={len(self.connected_clients)}")
 
     async def start(self) -> None:
+        await self._init_ambient_layer()
         logger.info(f"Listening on ws://{self.HOST}:{self.PORT}")
         async with serve(self.handle_client, self.HOST, self.PORT):
             await asyncio.Future()  # run forever

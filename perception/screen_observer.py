@@ -29,6 +29,8 @@ from typing import Callable, Optional
 
 logger = logging.getLogger("Copartner.ScreenObserver")
 
+_PROJECT_ROOT = Path(__file__).parent.parent
+
 try:
     import mss
     import mss.tools
@@ -117,9 +119,7 @@ class ScreenObserver:
             with mss.mss() as sct:
                 monitor = sct.monitors[1]   # Primary monitor
                 frame   = sct.grab(monitor)
-                buf = io.BytesIO()
-                mss.tools.to_png(frame.rgb, frame.size, output=buf)
-                return buf.getvalue()
+                return self._frame_to_png(frame)
         except Exception as e:
             logger.error(f"Screen capture failed: {e}")
             return None
@@ -132,12 +132,26 @@ class ScreenObserver:
             with mss.mss() as sct:
                 region = {"top": top, "left": left, "width": width, "height": height}
                 frame  = sct.grab(region)
-                buf = io.BytesIO()
-                mss.tools.to_png(frame.rgb, frame.size, output=buf)
-                return buf.getvalue()
+                return self._frame_to_png(frame)
         except Exception as e:
             logger.error(f"Region capture failed: {e}")
             return None
+
+    def _frame_to_png(self, frame) -> Optional[bytes]:
+        """Convert an mss frame to PNG bytes using PIL if available, fallback to mss.tools."""
+        if PIL_AVAILABLE:
+            from PIL import Image
+            img = Image.frombytes("RGB", frame.size, frame.bgra, "raw", "BGRX")
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            return buf.getvalue()
+        else:
+            # Fallback: write to temp file then read back
+            tmp = _PROJECT_ROOT / "data" / ".screen_tmp.png"
+            mss.tools.to_png(frame.rgb, frame.size, output=str(tmp))
+            data = tmp.read_bytes()
+            tmp.unlink(missing_ok=True)
+            return data
 
     # ── Gemini multimodal analysis ────────────────────────────────────────────
 
