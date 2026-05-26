@@ -1,0 +1,11 @@
+{
+  "naming_convention": "snake_case",
+  "indent_size": 4,
+  "indent_type": "spaces",
+  "preferred_language": "python",
+  "preferred_framework": "unknown",
+  "comment_style": "docstring",
+  "test_convention": "unknown",
+  "package_manager": "unknown",
+  "observations": 1
+}

@@ -58,13 +58,13 @@
   "2026-05-25": {
     "date": "2026-05-25",
     "tokens_by_model": {
-      "flash": 368
+      "flash": 468
     },
     "cost_by_model": {
-      "flash": 0.0001104
+      "flash": 0.0001404
     },
     "calls_by_model": {
-      "flash": 3
+      "flash": 4
     },
     "tasks": [
       {
@@ -84,6 +84,12 @@
         "model": "flash",
         "tokens": 168,
         "task": "what do you remember"
+      },
+      {
+        "time": "2026-05-25T22:43:46",
+        "model": "flash",
+        "tokens": 100,
+        "task": "hello"
       }
     ]
   }

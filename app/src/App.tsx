@@ -3,14 +3,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Terminal, Database, Settings, ArrowUp,
   Minus, Paperclip, Loader2, CheckCircle2, Clock,
-  Trash2, ChevronDown, Wifi, WifiOff
+  Trash2, ChevronDown, Wifi, WifiOff, Copy, Check,
+  Sparkles, BrainCircuit, Zap
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "./App.css";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 
 type ViewMode = "MINIMIZED" | "EXPANDED";
 type SidebarTab = "stream" | "memory" | "prefs";
 type ConnState = "connecting" | "open" | "closed" | "error";
+type MsgStatus = "streaming" | "complete" | "error";
 
 interface Message {
   id: string;
@@ -18,7 +22,7 @@ interface Message {
   text: string;
   timestamp: Date;
   toolBlocks?: ToolBlock[];
-  isStreaming?: boolean;
+  status?: MsgStatus;
 }
 
 interface ToolBlock {
@@ -120,17 +124,20 @@ export default function App() {
       setMessages(prev =>
         prev.map(m =>
           m.id === pid
-            ? { ...m, text: m.text + payload.text, isStreaming: true }
+            ? { ...m, text: m.text + payload.text, status: "streaming" as MsgStatus }
             : m
         )
       );
     } else if (type === "final_answer") {
       const pid = pendingIdRef.current;
       if (!pid) return;
+      // Strip <final_answer> tags for display
+      let cleanText = payload.text || "";
+      cleanText = cleanText.replace(/<final_answer>/g, "").replace(/<\/final_answer>/g, "").trim();
       setMessages(prev =>
         prev.map(m =>
           m.id === pid
-            ? { ...m, text: payload.text, isStreaming: false }
+            ? { ...m, text: cleanText, status: "complete" as MsgStatus }
             : m
         )
       );
@@ -141,7 +148,7 @@ export default function App() {
         setMessages(prev =>
           prev.map(m =>
             m.id === pid
-              ? { ...m, text: "Error: " + payload.message, isStreaming: false }
+              ? { ...m, text: "**Error:** " + payload.message, status: "error" as MsgStatus }
               : m
           )
         );
@@ -202,7 +209,7 @@ export default function App() {
       role: "agent",
       text: "",
       timestamp: new Date(),
-      isStreaming: true,
+      status: "streaming",
     };
     setMessages(prev => [...prev, pendingMsg]);
 
@@ -234,7 +241,6 @@ export default function App() {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: "suggestion_action", payload: { id: sug.id, action: sug.action } }));
-      // Also add it as a user message for context
       submitMessage(`Execute suggestion: ${sug.text}`);
     }
     setSuggestions(prev => prev.filter(s => s.id !== sug.id));
@@ -463,7 +469,7 @@ function ConnPill({ state }: { state: ConnState }) {
 function StreamView({ messages, feedRef, dashInputRef, onSubmit }: any) {
   return (
     <>
-      <div ref={feedRef} style={{ flex: 1, overflowY: "auto", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div ref={feedRef} style={{ flex: 1, overflowY: "auto", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "24px" }}>
         {messages.length === 0 ? <EmptyStream /> : messages.map((m: Message) => <MsgRow key={m.id} msg={m} />)}
       </div>
       <div style={{ padding: "0 24px 20px", flexShrink: 0 }}>
@@ -642,53 +648,250 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 function EmptyStream() {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0" }}>
+      <div style={{ 
+        width: "48px", height: "48px", borderRadius: "12px", 
+        background: "#111", border: "1px solid #1a1a1a",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        marginBottom: "16px"
+      }}>
+        <Sparkles size={20} color="#555" />
+      </div>
       <div style={{ fontSize: "14px", fontWeight: 500, color: "#666", marginBottom: "4px" }}>No messages yet.</div>
-      <div style={{ fontSize: "12px", color: "#444" }}>Type below to start.</div>
+      <div style={{ fontSize: "12px", color: "#444" }}>Type below to start building.</div>
     </div>
   );
 }
 
 function MsgRow({ msg }: { msg: Message }) {
   const isUser = msg.role === "user";
-  const isStreaming = msg.isStreaming && msg.role === "agent";
+  const isStreaming = msg.status === "streaming";
+  const isComplete = msg.status === "complete";
+  const isError = msg.status === "error";
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
       style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}
     >
+      {/* Avatar */}
       <div style={{
-        width: "28px", height: "28px", borderRadius: "50%", flexShrink: 0,
-        background: isUser ? "#151515" : "#eee",
-        border: isUser ? "1px solid #222" : "none",
+        width: "28px", height: "28px", borderRadius: "8px", flexShrink: 0,
+        background: isUser ? "#1a1a1a" : "#eee",
+        border: isUser ? "1px solid #2a2a2a" : "none",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: "11px", fontWeight: 600, color: isUser ? "#777" : "#000",
+        fontSize: "11px", fontWeight: 600, color: isUser ? "#888" : "#000",
       }}>
-        {isUser ? "U" : "C"}
+        {isUser ? (
+          <span>H</span>
+        ) : (
+          <BrainCircuit size={14} color="#000" />
+        )}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
+
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+        {/* Author + Status */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: isUser ? "#888" : "#ccc" }}>
+            {isUser ? "You" : "Copartner"}
+          </span>
+          {isStreaming && (
+            <span style={{ fontSize: "11px", color: "#3B82F6", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Zap size={10} style={{ animation: "pulse 1.5s ease-in-out infinite" }} />
+              thinking...
+            </span>
+          )}
+          {isComplete && (
+            <span style={{ fontSize: "11px", color: "#10B981", display: "flex", alignItems: "center", gap: "4px" }}>
+              <CheckCircle2 size={10} />
+              done
+            </span>
+          )}
+          {isError && (
+            <span style={{ fontSize: "11px", color: "#EF4444", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Clock size={10} />
+              error
+            </span>
+          )}
+        </div>
+
+        {/* Tool Blocks */}
         {msg.toolBlocks?.map((tool, i) => (
           <ToolBlockUI key={i} tool={tool} />
         ))}
-        {msg.text || !isStreaming ? (
-          <div style={{ fontSize: "13px", lineHeight: 1.65, color: "#bbb", paddingTop: msg.toolBlocks ? "8px" : "4px" }}>
-            {msg.text}
-            {isStreaming && <span style={{ display: "inline-block", width: "2px", height: "14px", background: "#666", marginLeft: "2px", animation: "blink 1s step-end infinite" }} />}
-          </div>
-        ) : (
-          !msg.toolBlocks && (
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", paddingTop: "6px" }}>
-              <Loader2 size={14} color="#555" className="spin" style={{ animation: "spin 1.5s linear infinite" }} />
-              <span style={{ fontSize: "12px", color: "#555" }}>Thinking…</span>
+
+        {/* Message Body */}
+        <div style={{ 
+          fontSize: "13.5px", 
+          lineHeight: 1.6, 
+          color: isUser ? "#ccc" : "#bbb",
+          paddingTop: msg.toolBlocks ? "8px" : "2px"
+        }}>
+          {isUser ? (
+            <span>{msg.text}</span>
+          ) : isStreaming && !msg.text ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 0" }}>
+              <Loader2 size={16} color="#3B82F6" style={{ animation: "spin 1.5s linear infinite" }} />
+              <span style={{ fontSize: "13px", color: "#555" }}>Copartner is thinking...</span>
             </div>
-          )
-        )}
+          ) : (
+            <MarkdownRenderer content={msg.text} />
+          )}
+          {isStreaming && msg.text && (
+            <span style={{ 
+              display: "inline-block", 
+              width: "2px", 
+              height: "16px", 
+              background: "#3B82F6", 
+              marginLeft: "3px", 
+              verticalAlign: "middle",
+              borderRadius: "1px",
+              animation: "blink 1s step-end infinite" 
+            }} />
+          )}
+        </div>
       </div>
     </motion.div>
   );
 }
 
+// ─── Markdown Renderer ─────────────────────────────────────────────────────
+function MarkdownRenderer({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="markdown-body">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          code({ node, inline, className, children, ...props }: any) {
+            const code = String(children).replace(/\n$/, "");
+            if (inline) {
+              return (
+                <code className="inline-code" {...props}>
+                  {children}
+                </code>
+              );
+            }
+            return (
+              <div style={{ position: "relative", margin: "12px 0" }}>
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "8px 12px", background: "#0a0a0a", border: "1px solid #1a1a1a",
+                  borderBottom: "none", borderRadius: "6px 6px 0 0",
+                }}>
+                  <span style={{ fontSize: "10px", color: "#555", fontFamily: "var(--font-mono)" }}>
+                    {className?.replace("language-", "") || "code"}
+                  </span>
+                  <button
+                    onClick={() => copyCode(code)}
+                    style={{
+                      background: "transparent", border: "none", color: "#555",
+                      cursor: "pointer", padding: "2px", display: "flex",
+                      borderRadius: "3px",
+                    }}
+                    title="Copy code"
+                  >
+                    {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
+                  </button>
+                </div>
+                <pre style={{
+                  margin: 0,
+                  padding: "12px",
+                  background: "#080808",
+                  border: "1px solid #1a1a1a",
+                  borderTop: "none",
+                  borderRadius: "0 0 6px 6px",
+                  overflow: "auto",
+                  fontSize: "12px",
+                  lineHeight: 1.6,
+                }}>
+                  <code {...props} style={{ fontFamily: "var(--font-mono)", color: "#a0a0a0" }}>
+                    {children}
+                  </code>
+                </pre>
+              </div>
+            );
+          },
+          p({ children }: any) {
+            return <p style={{ margin: "8px 0", lineHeight: 1.6 }}>{children}</p>;
+          },
+          ul({ children }: any) {
+            return <ul style={{ margin: "8px 0", paddingLeft: "20px", color: "#bbb" }}>{children}</ul>;
+          },
+          ol({ children }: any) {
+            return <ol style={{ margin: "8px 0", paddingLeft: "20px", color: "#bbb" }}>{children}</ol>;
+          },
+          li({ children }: any) {
+            return <li style={{ margin: "4px 0", lineHeight: 1.6 }}>{children}</li>;
+          },
+          h1({ children }: any) {
+            return <h1 style={{ fontSize: "18px", fontWeight: 700, color: "#eee", margin: "16px 0 8px", borderBottom: "1px solid #1a1a1a", paddingBottom: "8px" }}>{children}</h1>;
+          },
+          h2({ children }: any) {
+            return <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#ddd", margin: "14px 0 6px" }}>{children}</h2>;
+          },
+          h3({ children }: any) {
+            return <h3 style={{ fontSize: "14px", fontWeight: 600, color: "#ccc", margin: "12px 0 6px" }}>{children}</h3>;
+          },
+          blockquote({ children }: any) {
+            return (
+              <blockquote style={{
+                margin: "12px 0",
+                padding: "8px 12px",
+                borderLeft: "3px solid #3B82F6",
+                background: "#0a0a0a",
+                borderRadius: "0 6px 6px 0",
+                color: "#999",
+              }}>
+                {children}
+              </blockquote>
+            );
+          },
+          a({ href, children }: any) {
+            return <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#3B82F6", textDecoration: "none" }}>{children}</a>;
+          },
+          strong({ children }: any) {
+            return <strong style={{ color: "#eee", fontWeight: 600 }}>{children}</strong>;
+          },
+          hr() {
+            return <hr style={{ border: "none", borderTop: "1px solid #1a1a1a", margin: "16px 0" }} />;
+          },
+          table({ children }: any) {
+            return (
+              <div style={{ overflow: "auto", margin: "12px 0" }}>
+                <table style={{ borderCollapse: "collapse", fontSize: "12px", width: "100%" }}>
+                  {children}
+                </table>
+              </div>
+            );
+          },
+          thead({ children }: any) {
+            return <thead style={{ background: "#0e0e0e" }}>{children}</thead>;
+          },
+          th({ children }: any) {
+            return <th style={{ padding: "8px 12px", border: "1px solid #1a1a1a", textAlign: "left", fontWeight: 600, color: "#ccc", fontSize: "12px" }}>{children}</th>;
+          },
+          td({ children }: any) {
+            return <td style={{ padding: "8px 12px", border: "1px solid #1a1a1a", color: "#aaa" }}>{children}</td>;
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+// ─── Tool Block UI ───────────────────────────────────────────────────────────
 function ToolBlockUI({ tool }: { tool: ToolBlock }) {
   const [expanded, setExpanded] = useState(false);
   return (
