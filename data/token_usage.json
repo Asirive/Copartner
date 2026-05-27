@@ -96,13 +96,16 @@
   "2026-05-27": {
     "date": "2026-05-27",
     "tokens_by_model": {
-      "flash": 663
+      "flash": 2616,
+      "pro": 227
     },
     "cost_by_model": {
-      "flash": 0.00019889999999999998
+      "flash": 0.0007848,
+      "pro": 0.0015890000000000001
     },
     "calls_by_model": {
-      "flash": 5
+      "flash": 12,
+      "pro": 1
     },
     "tasks": [
       {
@@ -134,6 +137,54 @@
         "model": "flash",
         "tokens": 100,
         "task": "hi"
+      },
+      {
+        "time": "2026-05-27T11:42:57",
+        "model": "flash",
+        "tokens": 100,
+        "task": "hi"
+      },
+      {
+        "time": "2026-05-27T11:44:22",
+        "model": "flash",
+        "tokens": 1094,
+        "task": "can u make me a portfolio page for a filmaker"
+      },
+      {
+        "time": "2026-05-27T11:44:38",
+        "model": "flash",
+        "tokens": 307,
+        "task": "can u make me a portfolio page for a filmaker"
+      },
+      {
+        "time": "2026-05-27T11:44:44",
+        "model": "flash",
+        "tokens": 100,
+        "task": "can u make me a portfolio page for a filmaker"
+      },
+      {
+        "time": "2026-05-27T11:44:54",
+        "model": "pro",
+        "tokens": 227,
+        "task": "can u make me a portfolio page for a filmaker"
+      },
+      {
+        "time": "2026-05-27T11:45:23",
+        "model": "flash",
+        "tokens": 152,
+        "task": "can u exscute a echo cmd?"
+      },
+      {
+        "time": "2026-05-27T11:45:29",
+        "model": "flash",
+        "tokens": 100,
+        "task": "can u exscute a echo cmd?"
+      },
+      {
+        "time": "2026-05-27T11:45:34",
+        "model": "flash",
+        "tokens": 100,
+        "task": "can u exscute a echo cmd?"
       }
     ]
   }
