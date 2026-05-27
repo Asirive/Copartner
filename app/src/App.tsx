@@ -1,14 +1,16 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import AmbientBar from "./components/AmbientBar";
 import Dashboard from "./components/Dashboard";
 import { useCopartnerWebSocket } from "./hooks/useWebSocket";
-import { setDashboardMode, setBarMode } from "./windowCommands";
+import { setDashboardMode, setBarMode, setCollapsedMode } from "./windowCommands";
 import "./App.css";
 
 export default function App() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAmbientOn, setIsAmbientOn] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     connState,
@@ -27,13 +29,21 @@ export default function App() {
 
   const handleExpand = useCallback(async () => {
     setIsExpanded(true);
+    setIsHovered(true);
     await setDashboardMode();
   }, []);
 
   const handleMinimize = useCallback(async () => {
     setIsExpanded(false);
-    await setBarMode();
+    setIsHovered(false);
+    await setCollapsedMode();
   }, []);
+
+  const handleToggleAmbient = useCallback(() => {
+    const next = !isAmbientOn;
+    setIsAmbientOn(next);
+    sendWs("ambient_toggle", { active: next });
+  }, [isAmbientOn, sendWs]);
 
   // Auto-expand on urgent alert
   useEffect(() => {
@@ -42,14 +52,31 @@ export default function App() {
     }
   }, [aiState, isExpanded, handleExpand]);
 
-  const handleToggleAmbient = useCallback(() => {
-    const next = !isAmbientOn;
-    setIsAmbientOn(next);
-    sendWs("ambient_toggle", { active: next });
-  }, [isAmbientOn, sendWs]);
+  // Collapse/expand bar based on hover (only when not expanded)
+  const handleMouseEnter = useCallback(async () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    if (!isExpanded) {
+      setIsHovered(true);
+      await setBarMode();
+    }
+  }, [isExpanded]);
+
+  const handleMouseLeave = useCallback(async () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(async () => {
+      if (!isExpanded) {
+        setIsHovered(false);
+        await setCollapsedMode();
+      }
+    }, 600);
+  }, [isExpanded]);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div
+      style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* Always-visible Ambient Bar */}
       <AmbientBar
         connState={connState}
@@ -57,6 +84,7 @@ export default function App() {
         statusText={statusText}
         errorCount={errorCount}
         isAmbientOn={isAmbientOn}
+        isCollapsed={!isHovered && !isExpanded}
         onToggleAmbient={handleToggleAmbient}
         onExpand={handleExpand}
       />

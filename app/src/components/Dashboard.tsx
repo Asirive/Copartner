@@ -42,6 +42,12 @@ function ConnPill({ state }: { state: ConnState }) {
 function MsgRow({ msg }: { msg: Message }) {
   const isUser = msg.role === "user";
   const isError = msg.status === "error";
+  const isStreaming = msg.status === "streaming";
+  const [showTools, setShowTools] = useState(false);
+
+  const tools = msg.tools || [];
+  const completedTools = tools.filter(t => t.status === "end");
+  const runningTools = tools.filter(t => t.status === "start");
 
   return (
     <div style={{
@@ -67,22 +73,61 @@ function MsgRow({ msg }: { msg: Message }) {
       }}>
         {isUser ? "H" : "A"}
       </div>
-      <div style={{
-        padding: "10px 14px",
-        borderRadius: 10,
-        background: isUser ? "#1a1a1a" : "#0e0e0e",
-        border: `1px solid ${isError ? "#331a1a" : "#1a1a1a"}`,
-        color: isError ? "#EF4444" : "#ccc",
-        fontSize: 13,
-        lineHeight: 1.5,
-        maxWidth: "calc(100% - 40px)",
-      }}>
-        {isUser ? (
-          <span>{msg.text}</span>
-        ) : msg.status === "streaming" && !msg.text ? (
-          <Loader2 size={14} style={{ animation: "spin 1.5s linear infinite" }} />
-        ) : (
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+      <div style={{ maxWidth: "calc(100% - 40px)", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{
+          padding: "10px 14px",
+          borderRadius: 10,
+          background: isUser ? "#1a1a1a" : "#0e0e0e",
+          border: `1px solid ${isError ? "#331a1a" : "#1a1a1a"}`,
+          color: isError ? "#EF4444" : "#ccc",
+          fontSize: 13,
+          lineHeight: 1.5,
+        }}>
+          {isUser ? (
+            <span>{msg.text}</span>
+          ) : isStreaming && !msg.text ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Loader2 size={14} style={{ animation: "spin 1.5s linear infinite" }} />
+              <span style={{ color: "#666", fontSize: 12 }}>Copartner is thinking...</span>
+            </div>
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+          )}
+        </div>
+
+        {/* Tool Traces */}
+        {!isUser && (completedTools.length > 0 || runningTools.length > 0) && (
+          <div style={{ marginLeft: 4 }}>
+            <button
+              onClick={() => setShowTools(!showTools)}
+              style={{
+                background: "transparent", border: "none", color: "#555",
+                fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+              }}
+            >
+              <span>{showTools ? "▼" : "▶"}</span>
+              <span>Tools ({completedTools.length} done{runningTools.length > 0 ? `, ${runningTools.length} running` : ""})</span>
+            </button>
+            {showTools && (
+              <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+                {tools.map((tool, i) => (
+                  <div key={i} style={{
+                    padding: "4px 8px", borderRadius: 4, fontSize: 11,
+                    background: tool.status === "end" ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)",
+                    border: `1px solid ${tool.status === "end" ? "rgba(16,185,129,0.15)" : "rgba(245,158,11,0.15)"}`,
+                    color: "#888",
+                  }}>
+                    <span style={{ fontWeight: 600, color: tool.status === "end" ? "#10B981" : "#F59E0B" }}>
+                      &lt;{tool.tag}&gt;
+                    </span>
+                    {tool.result_preview && (
+                      <span style={{ marginLeft: 6, color: "#666" }}>{tool.result_preview.slice(0, 80)}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

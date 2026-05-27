@@ -30,29 +30,34 @@ fn resize_window(window: tauri::Window, height: u32) -> Result<(), String> {
 
 #[tauri::command]
 fn set_bar_mode(window: tauri::Window) -> Result<(), String> {
-    resize_window(window, 40)
+  resize_window(window, 40)
+}
+
+#[tauri::command]
+fn set_collapsed_mode(window: tauri::Window) -> Result<(), String> {
+  resize_window(window, 6)
 }
 
 #[tauri::command]
 fn set_dashboard_mode(window: tauri::Window) -> Result<(), String> {
-    let monitor = window.current_monitor()
-        .map_err(|e| e.to_string())?
-        .ok_or("No monitor found")?;
-    let size = monitor.size();
-    
-    window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-        width: size.width,
-        height: 600,
-    })).map_err(|e| e.to_string())?;
-    
-    window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
-        x: 0,
-        y: 0,
-    })).map_err(|e| e.to_string())?;
-    
-    window.set_focus().map_err(|e| e.to_string())?;
-    
-    Ok(())
+  let monitor = window.current_monitor()
+      .map_err(|e| e.to_string())?
+      .ok_or("No monitor found")?;
+  let size = monitor.size();
+  
+  window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+      width: size.width,
+      height: 600,
+  })).map_err(|e| e.to_string())?;
+  
+  window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+      x: 0,
+      y: 0,
+  })).map_err(|e| e.to_string())?;
+  
+  window.set_focus().map_err(|e| e.to_string())?;
+  
+  Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -83,16 +88,17 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             resize_window,
             set_bar_mode,
+            set_collapsed_mode,
             set_dashboard_mode
         ])
         .setup(|app| {
-            // Set initial window to full monitor width
+            // Set initial window to collapsed mode (thin line)
             if let Some(window) = app.get_webview_window("main") {
                 if let Ok(Some(monitor)) = window.current_monitor() {
                     let size = monitor.size();
                     let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
                         width: size.width,
-                        height: 40,
+                        height: 6,
                     }));
                     let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
                         x: 0,

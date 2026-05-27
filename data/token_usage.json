@@ -96,16 +96,16 @@
   "2026-05-27": {
     "date": "2026-05-27",
     "tokens_by_model": {
-      "flash": 4734,
-      "pro": 227
+      "flash": 5334,
+      "pro": 1643
     },
     "cost_by_model": {
-      "flash": 0.0014202,
-      "pro": 0.0015890000000000001
+      "flash": 0.0016002000000000004,
+      "pro": 0.011500999999999999
     },
     "calls_by_model": {
-      "flash": 16,
-      "pro": 1
+      "flash": 22,
+      "pro": 6
     },
     "tasks": [
       {
@@ -209,6 +209,72 @@
         "model": "flash",
         "tokens": 100,
         "task": "can u make me a portfolio for a filmaker"
+      },
+      {
+        "time": "2026-05-27T19:23:40",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what did u see"
+      },
+      {
+        "time": "2026-05-27T19:23:46",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what did u see"
+      },
+      {
+        "time": "2026-05-27T19:23:53",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what did u see"
+      },
+      {
+        "time": "2026-05-27T19:24:33",
+        "model": "pro",
+        "tokens": 304,
+        "task": "what did u see"
+      },
+      {
+        "time": "2026-05-27T19:25:04",
+        "model": "pro",
+        "tokens": 573,
+        "task": "what did u see"
+      },
+      {
+        "time": "2026-05-27T19:25:20",
+        "model": "pro",
+        "tokens": 221,
+        "task": "what did u see"
+      },
+      {
+        "time": "2026-05-27T19:25:29",
+        "model": "pro",
+        "tokens": 189,
+        "task": "what did u see"
+      },
+      {
+        "time": "2026-05-27T19:25:36",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what do u see"
+      },
+      {
+        "time": "2026-05-27T19:25:43",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what do u see"
+      },
+      {
+        "time": "2026-05-27T19:25:50",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what do u see"
+      },
+      {
+        "time": "2026-05-27T19:26:04",
+        "model": "pro",
+        "tokens": 129,
+        "task": "what do u see"
       }
     ]
   }

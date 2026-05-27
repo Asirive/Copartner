@@ -1,11 +1,11 @@
 {
   "naming_convention": "snake_case",
-  "indent_size": 4,
+  "indent_size": 2,
   "indent_type": "spaces",
   "preferred_language": "python",
   "preferred_framework": "next",
   "comment_style": "jsdoc",
   "test_convention": "unknown",
   "package_manager": "unknown",
-  "observations": 4
+  "observations": 10
 }

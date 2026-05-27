@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Play, Pause, Expand, Wifi, WifiOff, Loader2, AlertCircle } from "lucide-react";
 import type { ConnState, AIState } from "../hooks/useWebSocket";
@@ -9,6 +8,7 @@ interface AmbientBarProps {
   statusText: string;
   errorCount: number;
   isAmbientOn: boolean;
+  isCollapsed: boolean;
   onToggleAmbient: () => void;
   onExpand: () => void;
 }
@@ -50,23 +50,66 @@ function ConnDot({ state }: { state: ConnState }) {
   );
 }
 
+// Collapsed: just a 4px colored line
+function CollapsedBar({ aiState, errorCount }: { aiState: AIState; errorCount: number }) {
+  const colors = {
+    idle: "rgba(50,50,50,0.6)",
+    watching: "rgba(16,185,129,0.6)",
+    thinking: "rgba(245,158,11,0.6)",
+    urgent: "rgba(239,68,68,0.8)",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{
+        width: "100%",
+        height: 4,
+        background: colors[aiState],
+        boxShadow: aiState === "urgent" ? "0 0 8px rgba(239,68,68,0.5)" : "none",
+        cursor: "default",
+        position: "relative",
+      }}
+    >
+      {errorCount > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            right: 20,
+            top: -5,
+            width: 10,
+            height: 10,
+            borderRadius: "50%",
+            background: "#EF4444",
+            boxShadow: "0 0 4px rgba(239,68,68,0.6)",
+          }}
+        />
+      )}
+    </motion.div>
+  );
+}
+
 export default function AmbientBar({
   connState,
   aiState,
   statusText,
   errorCount,
   isAmbientOn,
+  isCollapsed,
   onToggleAmbient,
   onExpand,
 }: AmbientBarProps) {
-  const [hovered, setHovered] = useState(false);
+  if (isCollapsed) {
+    return <CollapsedBar aiState={aiState} errorCount={errorCount} />;
+  }
 
   return (
     <motion.div
       data-tauri-drag-region
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      animate={{ opacity: hovered ? 1 : 0.85 }}
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 40 }}
+      exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2 }}
       style={{
         width: "100%",
@@ -75,7 +118,7 @@ export default function AmbientBar({
         alignItems: "center",
         justifyContent: "space-between",
         padding: "0 16px",
-        background: "rgba(6,6,6,0.88)",
+        background: "rgba(6,6,6,0.92)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         borderBottom: aiState === "urgent" ? "2px solid #EF4444" : "1px solid rgba(255,255,255,0.06)",
@@ -86,12 +129,13 @@ export default function AmbientBar({
         userSelect: "none",
         position: "relative",
         zIndex: 9999,
+        flexShrink: 0,
       }}
     >
       {/* Left: Play/Stop + Brand */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
         <button
-          onClick={onToggleAmbient}
+          onClick={(e) => { e.stopPropagation(); onToggleAmbient(); }}
           style={{
             background: isAmbientOn ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
             border: "none",
@@ -189,7 +233,7 @@ export default function AmbientBar({
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <ConnDot state={connState} />
         <button
-          onClick={onExpand}
+          onClick={(e) => { e.stopPropagation(); onExpand(); }}
           style={{
             background: "transparent",
             border: "1px solid rgba(255,255,255,0.1)",

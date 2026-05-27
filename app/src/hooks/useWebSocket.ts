@@ -28,12 +28,20 @@ export interface Suggestion {
   confidence: number;
 }
 
+export interface ToolExec {
+  tag: string;
+  status: "start" | "end";
+  content?: string;
+  result_preview?: string;
+}
+
 export interface Message {
   id: string;
   role: "user" | "agent";
   text: string;
   timestamp: Date;
   status: "streaming" | "complete" | "error";
+  tools?: ToolExec[];
 }
 
 const WS_URL = "ws://127.0.0.1:8765";
@@ -101,12 +109,35 @@ export function useCopartnerWebSocket() {
           case "pong": break;
           case "stream_chunk": {
             const pid = pendingIdRef.current;
-            if (pid) {
+            const chunk = p.chunk ?? p.text ?? "";
+            if (pid && chunk) {
               setMessages(prev => prev.map(m =>
-                m.id === pid ? { ...m, text: m.text + p.chunk } : m
+                m.id === pid ? { ...m, text: m.text + chunk } : m
               ));
             }
             setAiState("thinking");
+            break;
+          }
+          case "tool_event": {
+            const pid = pendingIdRef.current;
+            if (!pid) break;
+            setMessages(prev => {
+              const idx = prev.findIndex(m => m.id === pid);
+              if (idx === -1) return prev;
+              const msg = prev[idx];
+              const tools = [...(msg.tools || [])];
+              if (p.status === "start") {
+                tools.push({ tag: p.tag, status: "start", content: p.content });
+              } else {
+                const tidx = tools.findIndex(t => t.tag === p.tag && t.status === "start");
+                if (tidx !== -1) {
+                  tools[tidx] = { ...tools[tidx], status: "end", result_preview: p.result_preview };
+                }
+              }
+              const updated = [...prev];
+              updated[idx] = { ...msg, tools };
+              return updated;
+            });
             break;
           }
           case "final_answer": {
