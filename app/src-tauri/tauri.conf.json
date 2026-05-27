@@ -12,18 +12,23 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Copartner",
-        "width": 600,
-        "height": 64,
-        "minWidth": 600,
-        "minHeight": 64,
+        "width": 1920,
+        "height": 40,
+        "minWidth": 400,
+        "minHeight": 40,
+        "maxHeight": 800,
         "transparent": true,
         "decorations": false,
         "resizable": true,
         "alwaysOnTop": true,
-        "visible": false,
-        "center": true,
-        "shadow": false
+        "visible": true,
+        "center": false,
+        "x": 0,
+        "y": 0,
+        "shadow": false,
+        "skipTaskbar": false
       }
     ],
     "security": {

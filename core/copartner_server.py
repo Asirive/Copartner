@@ -66,6 +66,11 @@ class CopartnerServer:
         self.ide_watcher: IDEWatcher | None = None
         self.proactive_engine: ProactiveEngine | None = None
 
+        # Ambient state tracking
+        self._ambient_active = False
+        self._ambient_error_count = 0
+        self._ambient_status_message = "Copartner ready"
+
         # Chat history persistence
         self._chat_log_path = _PROJECT_ROOT / "data" / "chat_history.jsonl"
         self._chat_log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -196,6 +201,25 @@ class CopartnerServer:
             return
         message = json.dumps({"type": "state_update", "payload": state_update})
         await asyncio.gather(*(c.send(message) for c in self.connected_clients), return_exceptions=True)
+
+    async def broadcast_ambient_status(self, state: str, message: str, error_count: int | None = None) -> None:
+        """Broadcast ambient status to all connected clients for the bar UI."""
+        if not self.connected_clients:
+            return
+        payload = {"state": state, "message": message}
+        if error_count is not None:
+            payload["error_count"] = error_count
+        msg = json.dumps({"type": "ambient_status", "payload": payload})
+        await asyncio.gather(*(c.send(msg) for c in self.connected_clients), return_exceptions=True)
+
+    async def broadcast_urgency_alert(self, message: str, score: int, source: str = "") -> None:
+        """Broadcast urgent alert that should auto-expand the bar."""
+        if not self.connected_clients:
+            return
+        payload = {"message": message, "score": score, "source": source}
+        msg = json.dumps({"type": "urgency_alert", "payload": payload})
+        await asyncio.gather(*(c.send(msg) for c in self.connected_clients), return_exceptions=True)
+        logger.info(f"Urgency alert broadcasted: {message} (score={score})")
 
     async def _send(self, websocket, type_: str, payload: Dict[str, Any]) -> None:
         try:
@@ -471,6 +495,30 @@ class CopartnerServer:
                     if self.proactive_engine:
                         self.proactive_engine.block_action(action)
                     await self._send(websocket, "state_update", {"blocked_action": action})
+
+                elif command_type == "ambient_toggle":
+                    active = payload.get("active", False)
+                    self._ambient_active = active
+                    if active:
+                        if self.screen_observer and not self.screen_observer._running:
+                            self.screen_observer.start()
+                        if self.ide_watcher and not self.ide_watcher._running:
+                            self.ide_watcher.start()
+                        if self.proactive_engine and not self.proactive_engine._running:
+                            self.proactive_engine.start()
+                        msg = "Ambient monitoring active"
+                        state = "watching"
+                    else:
+                        if self.screen_observer:
+                            self.screen_observer.stop()
+                        if self.ide_watcher:
+                            self.ide_watcher.stop()
+                        if self.proactive_engine:
+                            self.proactive_engine.stop()
+                        msg = "Ambient monitoring paused"
+                        state = "idle"
+                    logger.info(f"Ambient toggled: {active}")
+                    await self.broadcast_ambient_status(state, msg, self._ambient_error_count)
 
                 else:
                     await self._send(websocket, "error", {"message": f"unknown type: {command_type}"})
