@@ -4,7 +4,7 @@ import {
   Search, Terminal, Database, Settings, ArrowUp,
   Minus, Paperclip, Loader2, CheckCircle2, Clock,
   Trash2, ChevronDown, Wifi, WifiOff, Copy, Check,
-  Sparkles, BrainCircuit, Zap
+  Sparkles, Zap
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -341,8 +341,8 @@ function Dashboard({ messages, onMinimize, dashInputRef, onSubmit, onClear, conn
         
         {/* Brand */}
         <div data-tauri-drag-region style={{ height: "52px", display: "flex", alignItems: "center", padding: "0 16px", gap: "8px", cursor: "grab", borderBottom: "1px solid #141414" }}>
-          <div style={{ width: "22px", height: "22px", borderRadius: "5px", background: "#eaff00", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: "11px", fontWeight: 800, color: "#000", letterSpacing: "-0.5px" }}>A</span>
+          <div style={{ width: "22px", height: "22px", borderRadius: "5px", overflow: "hidden", flexShrink: 0 }}>
+            <AsiriveMark size={22} />
           </div>
           <span style={{ fontSize: "13px", fontWeight: 600, color: "#ccc" }}>Copartner</span>
           <span style={{ fontSize: "10px", color: "#444", marginLeft: "auto" }}>v0.1</span>
@@ -678,15 +678,15 @@ function MsgRow({ msg }: { msg: Message }) {
       {/* Avatar */}
       <div style={{
         width: "28px", height: "28px", borderRadius: "8px", flexShrink: 0,
-        background: isUser ? "#1a1a1a" : "#eee",
+        background: isUser ? "#1a1a1a" : "#eaff00",
         border: isUser ? "1px solid #2a2a2a" : "none",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: "11px", fontWeight: 600, color: isUser ? "#888" : "#000",
+        overflow: "hidden",
       }}>
         {isUser ? (
-          <span>H</span>
+          <span style={{ fontSize: "11px", fontWeight: 600, color: "#888" }}>H</span>
         ) : (
-          <BrainCircuit size={14} color="#000" />
+          <AsiriveMark size={20} />
         )}
       </div>
 
@@ -921,6 +921,19 @@ function ToolBlockUI({ tool }: { tool: ToolBlock }) {
         </div>
       )}
     </div>
+  );
+}
+
+function AsiriveMark({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{ display: "block" }}>
+      <rect width="100" height="100" fill="#eaff00" />
+      <rect x="20" y="20" width="20" height="40" fill="#000000" />
+      <rect x="20" y="70" width="20" height="10" fill="#000000" />
+      <rect x="60" y="40" width="20" height="40" fill="#000000" />
+      <rect x="60" y="20" width="20" height="10" fill="#000000" />
+      <rect x="40" y="40" width="20" height="20" fill="#000000" />
+    </svg>
   );
 }
 
