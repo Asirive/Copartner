@@ -37,9 +37,10 @@ except ImportError:
 
 
 # Default model preferences (best quality/cost tradeoff from Go roster)
-# NOTE: kimi-k2.6 uses reasoning tokens that consume max_tokens budget.
-# Use k2.5 for reliable output, or increase max_tokens significantly for k2.6.
-DEFAULT_MODEL    = "kimi-k2.5"      # strong coding, reliable output
+# NOTE: kimi-k2.6 emits reasoning tokens BEFORE the actual response.
+# These reasoning tokens count against max_tokens, so we set max_tokens
+# very high (64K) to ensure there's room for both reasoning + output.
+DEFAULT_MODEL    = "kimi-k2.6"      # strongest coding model, reasoning-enabled
 REASONING_MODEL  = "deepseek-v4-pro"  # deep reasoning tasks
 LONG_CTX_MODEL   = "minimax-m2.5"   # long documents / context
 FAST_MODEL       = "qwen3.5-plus"   # quick completions, cheapest
@@ -99,7 +100,7 @@ class OpenCodeClient:
         system_instruction: Optional[str] = None,
         model: Optional[str] = None,
         temperature: float = 0.3,
-        max_tokens: int = 16384,
+        max_tokens: int = 64000,
     ) -> str:
         """
         Synchronous text generation using an OpenCode Go model.
@@ -143,7 +144,7 @@ class OpenCodeClient:
         system_instruction: Optional[str] = None,
         model: Optional[str] = None,
         temperature: float = 0.5,
-        max_tokens: int = 16384,
+        max_tokens: int = 64000,
     ) -> Generator[str, None, None]:
         """
         Streaming text generation using an OpenCode Go model.
@@ -206,7 +207,7 @@ class OpenCodeClient:
         return self.generate(
             prompt=brief,
             system_instruction=sys,
-            model=DEFAULT_MODEL,   # kimi-k2.5 is reliable for code
+            model=DEFAULT_MODEL,   # kimi-k2.6 — strongest coding model
             temperature=0.2,
-            max_tokens=32768,      # High limit for scaffolding large projects
+            max_tokens=64000,      # Very high limit: reasoning tokens + output
         )
