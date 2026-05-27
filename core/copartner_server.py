@@ -109,47 +109,71 @@ class CopartnerServer:
     # ── Callbacks from perception layer ───────────────────────────────────────
 
     def _on_screen_change(self, analysis: str):
+        import time
         if self.proactive_engine:
             self.proactive_engine.observe(Observation(
                 source="screen", event_type="change", content=analysis,
-                timestamp=asyncio.get_event_loop().time(), metadata={},
+                timestamp=time.time(), metadata={},
             ))
-        asyncio.create_task(self.broadcast_state({
-            "ambient": {"screen_last_analysis": analysis[:200]},
-        }))
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.call_soon_threadsafe(asyncio.create_task, self.broadcast_state({
+                    "ambient": {"screen_last_analysis": analysis[:200]},
+                }))
+        except RuntimeError:
+            pass
 
     def _on_file_create(self, path: str, content: str):
+        import time
         if self.proactive_engine:
             self.proactive_engine.observe(Observation(
                 source="ide", event_type="create", content=Path(path).name,
-                timestamp=asyncio.get_event_loop().time(),
+                timestamp=time.time(),
                 metadata={"path": path, "content_preview": content[:200]},
             ))
-        asyncio.create_task(self.broadcast_state({
-            "ambient": {"last_file_event": f"Created {Path(path).name}"},
-        }))
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.call_soon_threadsafe(asyncio.create_task, self.broadcast_state({
+                    "ambient": {"last_file_event": f"Created {Path(path).name}"},
+                }))
+        except RuntimeError:
+            pass
 
     def _on_file_modify(self, path: str, content: str):
+        import time
         if self.proactive_engine:
             self.proactive_engine.observe(Observation(
                 source="ide", event_type="modify", content=Path(path).name,
-                timestamp=asyncio.get_event_loop().time(),
+                timestamp=time.time(),
                 metadata={"path": path, "content_preview": content[:200]},
             ))
-        asyncio.create_task(self.broadcast_state({
-            "ambient": {"last_file_event": f"Modified {Path(path).name}"},
-        }))
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.call_soon_threadsafe(asyncio.create_task, self.broadcast_state({
+                    "ambient": {"last_file_event": f"Modified {Path(path).name}"},
+                }))
+        except RuntimeError:
+            pass
 
     def _on_file_delete(self, path: str):
+        import time
         if self.proactive_engine:
             self.proactive_engine.observe(Observation(
                 source="ide", event_type="delete", content=Path(path).name,
-                timestamp=asyncio.get_event_loop().time(),
+                timestamp=time.time(),
                 metadata={"path": path},
             ))
-        asyncio.create_task(self.broadcast_state({
-            "ambient": {"last_file_event": f"Deleted {Path(path).name}"},
-        }))
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.call_soon_threadsafe(asyncio.create_task, self.broadcast_state({
+                    "ambient": {"last_file_event": f"Deleted {Path(path).name}"},
+                }))
+        except RuntimeError:
+            pass
 
     def _on_proactive_suggestion(self, suggestion):
         asyncio.create_task(self._broadcast_suggestion(suggestion))

@@ -96,15 +96,15 @@
   "2026-05-27": {
     "date": "2026-05-27",
     "tokens_by_model": {
-      "flash": 2616,
+      "flash": 4734,
       "pro": 227
     },
     "cost_by_model": {
-      "flash": 0.0007848,
+      "flash": 0.0014202,
       "pro": 0.0015890000000000001
     },
     "calls_by_model": {
-      "flash": 12,
+      "flash": 16,
       "pro": 1
     },
     "tasks": [
@@ -185,6 +185,30 @@
         "model": "flash",
         "tokens": 100,
         "task": "can u exscute a echo cmd?"
+      },
+      {
+        "time": "2026-05-27T12:21:44",
+        "model": "flash",
+        "tokens": 100,
+        "task": "hello"
+      },
+      {
+        "time": "2026-05-27T12:23:25",
+        "model": "flash",
+        "tokens": 1005,
+        "task": "can u make me a portfolio for a filmaker"
+      },
+      {
+        "time": "2026-05-27T12:24:25",
+        "model": "flash",
+        "tokens": 913,
+        "task": "can u make me a portfolio for a filmaker"
+      },
+      {
+        "time": "2026-05-27T12:24:31",
+        "model": "flash",
+        "tokens": 100,
+        "task": "can u make me a portfolio for a filmaker"
       }
     ]
   }
