@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import AmbientBar from "./components/AmbientBar";
 import Dashboard from "./components/Dashboard";
@@ -34,6 +34,13 @@ export default function App() {
     setIsExpanded(false);
     await setBarMode();
   }, []);
+
+  // Auto-expand on urgent alert
+  useEffect(() => {
+    if (aiState === "urgent" && !isExpanded) {
+      handleExpand();
+    }
+  }, [aiState, isExpanded, handleExpand]);
 
   const handleToggleAmbient = useCallback(() => {
     const next = !isAmbientOn;
