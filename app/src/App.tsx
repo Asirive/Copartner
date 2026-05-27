@@ -341,8 +341,8 @@ function Dashboard({ messages, onMinimize, dashInputRef, onSubmit, onClear, conn
         
         {/* Brand */}
         <div data-tauri-drag-region style={{ height: "52px", display: "flex", alignItems: "center", padding: "0 16px", gap: "8px", cursor: "grab", borderBottom: "1px solid #141414" }}>
-          <div style={{ width: "22px", height: "22px", borderRadius: "5px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "#000" }}>C</span>
+          <div style={{ width: "22px", height: "22px", borderRadius: "5px", background: "#eaff00", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: "11px", fontWeight: 800, color: "#000", letterSpacing: "-0.5px" }}>A</span>
           </div>
           <span style={{ fontSize: "13px", fontWeight: 600, color: "#ccc" }}>Copartner</span>
           <span style={{ fontSize: "10px", color: "#444", marginLeft: "auto" }}>v0.1</span>

@@ -92,5 +92,43 @@
         "task": "hello"
       }
     ]
+  },
+  "2026-05-27": {
+    "date": "2026-05-27",
+    "tokens_by_model": {
+      "flash": 563
+    },
+    "cost_by_model": {
+      "flash": 0.00016889999999999999
+    },
+    "calls_by_model": {
+      "flash": 4
+    },
+    "tasks": [
+      {
+        "time": "2026-05-27T11:23:20",
+        "model": "flash",
+        "tokens": 100,
+        "task": "hello"
+      },
+      {
+        "time": "2026-05-27T11:23:52",
+        "model": "flash",
+        "tokens": 263,
+        "task": "what do u remember"
+      },
+      {
+        "time": "2026-05-27T11:23:57",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what do u remember"
+      },
+      {
+        "time": "2026-05-27T11:24:02",
+        "model": "flash",
+        "tokens": 100,
+        "task": "what do u remember"
+      }
+    ]
   }
 }
